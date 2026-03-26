@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { EditProvider, useEdit } from './context/EditContext'
 import Overview from './pages/Overview'
 import Teams from './pages/Teams'
@@ -81,13 +81,34 @@ function PageContent({ active }) {
 }
 
 function AppInner() {
-  const [active, setActive] = useState('overview')
+  const getInitialPage = () => {
+    const hash = window.location.hash.replace('#', '')
+    const valid = SECTIONS.map(s => s.id)
+    return valid.includes(hash) ? hash : 'overview'
+  }
+
+  const [active, setActive] = useState(getInitialPage)
   const { editMode } = useEdit()
+
+  const navigate = (page) => {
+    setActive(page)
+    window.location.hash = page
+  }
+
+  useEffect(() => {
+    const onHashChange = () => {
+      const hash = window.location.hash.replace('#', '')
+      const valid = SECTIONS.map(s => s.id)
+      if (valid.includes(hash)) setActive(hash)
+    }
+    window.addEventListener('hashchange', onHashChange)
+    return () => window.removeEventListener('hashchange', onHashChange)
+  }, [])
 
   return (
     <div className={`app${editMode ? ' edit-mode-on' : ''}`}>
       <Header active={active} />
-      <Nav active={active} setActive={setActive} />
+      <Nav active={active} setActive={navigate} />
       <div className="main">
         <PageContent active={active} />
       </div>
